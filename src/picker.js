@@ -25,23 +25,23 @@ var $document = angular.element( document )
  */
 function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 
-    // If there’s no element, return the picker constructor.
+   // If there’s no element, return the picker constructor.
     if ( !ELEMENT ) return PickerConstructor
 
-	var SETTINGS;
-	
-	// Merge the defaults and options passed.
-	if (COMPONENT) {
-		SETTINGS = COMPONENT.defaults;
-		angular.extend(SETTINGS, OPTIONS);
-	} else {
-		SETTINGS = OPTIONS || {};
-	}
-	
-	// Merge the default classes with the settings classes.
-	var CLASSES = PickerConstructor.klasses();
-	angular.extend(CLASSES, SETTINGS.klass);
-	
+    var SETTINGS;
+    
+    // Merge the defaults and options passed.
+    if (COMPONENT) {
+        SETTINGS = COMPONENT.defaults;
+        angular.extend(SETTINGS, OPTIONS);
+    } else {
+        SETTINGS = OPTIONS || {};
+    }
+    
+    // Merge the default classes with the settings classes.
+    var CLASSES = PickerConstructor.klasses();
+    angular.extend(CLASSES, SETTINGS.klass);
+    
 
     var
         // The state of the picker.
@@ -110,12 +110,8 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 
 
                 // Insert the root as specified in the settings.
-                if ( SETTINGS.container ) {
-                  angular.element( SETTINGS.container ).append( P.$root )
-                } 
-                else {
-                  $ELEMENT.after( P.$root )
-                }
+                if ( SETTINGS.container ) angular.element( SETTINGS.container ).append( P.$root )
+                else $ELEMENT.after( P.$root )
 
 
                 // Bind the default component and settings events.
@@ -229,7 +225,7 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
                     $ELEMENT.triggerHandler( 'focus' )
 
                     // Bind the document events.
-					angular.element(document.querySelectorAll('#' + STATE.id)).on('click focusin', function( event ) {
+                    angular.element(document.querySelectorAll('#' + STATE.id)).on('click focusin', function( event ) {
                         var target = event.target;
 
                         // If the target of the event is not the element, close the picker picker.
@@ -247,8 +243,31 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
                         }
 
                     });
-					
-					angular.element(document.querySelectorAll('#' + STATE.id)).on( 'keydown', function( event ) {
+
+                    // Bind the click event for backdrop of datepicker, when datepicker is opened.
+                    // This will trigger the datepicker to close, when user clicks outside the datepicker.
+                    angular.element(document.querySelectorAll('.' + CLASSES.backdrop)).on('click', function( event ) {
+                        var target = event.target;
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        // If the target of the event is not the element, close the picker picker.
+                        // * Don’t worry about clicks or focusins on the root because those don’t bubble up.
+                        //   Also, for Firefox, a click on an `option` element bubbles up directly
+                        //   to the doc. So make sure the target wasn't the doc.
+                        // * In Firefox stopPropagation() doesn’t prevent right-click events from bubbling,
+                        //   which causes the picker to unexpectedly close when right-clicking it. So make
+                        //   sure the event wasn’t a right-click.
+                        if ( target != ELEMENT && target != document && event.which != 3 ) {
+
+                            // If the target was the holder that covers the screen,
+                            // keep the element focused to maintain tabindex.
+                            P.close(true);
+                        }
+
+                    });
+                    
+                    angular.element(document.querySelectorAll('#' + STATE.id)).on( 'keydown', function( event ) {
 
                         var
                             // Get the keycode.
@@ -310,7 +329,7 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
                     // The focus is triggered *after* the close has completed - causing it
                     // to open again. So unbind and rebind the event at the next tick.
                     $ELEMENT.off( 'focus.' + STATE.id );
-					$ELEMENT.triggerHandler( 'focus' );
+                    $ELEMENT.triggerHandler( 'focus' );
                     setTimeout( function() {
                         angular.element(document.querySelectorAll('#' + STATE.id)).on( 'focus', focusToOpen )
                     }, 0 )
@@ -359,7 +378,7 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
                     thingObject = thingIsObject ? thing : {}
 
                 // Make sure we have usable options.
-                options = thingIsObject && angular.isObject( value ) ? value : options || {}
+                options = thingIsObject && angular.isObject( value ) ? value : options || {}
 
                 if ( thing ) {
 
@@ -383,7 +402,7 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
                         if ( thingItem == 'select' || thingItem == 'clear' ) {
                             $ELEMENT[0].value = thingItem == 'clear' ?
                                 '' : P.get( thingItem, SETTINGS.format );
-							$ELEMENT.triggerHandler('change');
+                            $ELEMENT.triggerHandler('change');
                         }
                     }
 
@@ -525,6 +544,11 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 
                 // Picker frame class
                 CLASSES.frame
+            ) +
+            // added backdrop to handle outside click, when datepicker is opened
+            PickerConstructor._.node('div',
+                '<input style="display:none"/>',
+                CLASSES.backdrop
             ),
 
             // Picker holder class
@@ -538,21 +562,21 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
      * Prepare the input element with all bindings.
      */
     function prepareElement() {
-		// Store the picker data by component name.
+        // Store the picker data by component name.
         $ELEMENT.data(NAME, P);
 
         // Add the “input” class name.
         $ELEMENT.addClass(CLASSES.input)
-		
-		// If there’s a `data-value`, update the value of the element.
-		$ELEMENT[0].value = $ELEMENT.attr('data-value') ?
-			P.get('select', SETTINGS.format) :
-			ELEMENT.value;
+        
+        // If there’s a `data-value`, update the value of the element.
+        $ELEMENT[0].value = $ELEMENT.attr('data-value') ?
+            P.get('select', SETTINGS.format) :
+            ELEMENT.value;
 
-		// On focus/click, open the picker and adjust the root “focused” state.
-		angular.element(document.querySelectorAll('#' + STATE.id)).on('focus', focusToOpen);
-		angular.element(document.querySelectorAll('#' + STATE.id)).on('click', focusToOpen);
-		
+        // On focus/click, open the picker and adjust the root “focused” state.
+        angular.element(document.querySelectorAll('#' + STATE.id)).on('focus', focusToOpen);
+        angular.element(document.querySelectorAll('#' + STATE.id)).on('click', focusToOpen);
+        
         // Only bind keydown events if the element isn’t editable.
         if ( !SETTINGS.editable ) {
 
@@ -579,7 +603,7 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 
                     // If `delete` was pressed, clear the values and close the picker.
                     // Otherwise open the picker.
-                    if ( isKeycodeDelete ) { P.clear().close() }
+                    if ( isKeycodeDelete ) { angular.element(P.$root[0].querySelector('[data-clear]')).triggerHandler('click');}
                     else { P.open() }
                 }
             })
@@ -600,50 +624,55 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
      * Prepare the root picker element with all bindings.
      */
     function prepareElementRoot() {
-		// When something within the root is focused, stop from bubbling
-		// to the doc and remove the “focused” state from the root.	
+        // When something within the root is focused, stop from bubbling
+        // to the doc and remove the “focused” state from the root. 
         P.$root.on('focusin', function( event ) {
-			P.$root.removeClass( CLASSES.focused )
-			aria( P.$root[0], 'selected', false )
-			event.stopPropagation()
-		});
-	
-		// When something within the root holder is clicked, stop it
+            P.$root.removeClass( CLASSES.focused )
+            aria( P.$root[0], 'selected', false )
+            event.stopPropagation()
+        });
+    
+        // When something within the root holder is clicked, stop it
         // from bubbling to the doc.
         P.$root.on('mousedown click', function( event ) {
-			
-			var target = event.target
+            
+            var target = event.target
 
-			// Make sure the target isn’t the root holder so it can bubble up.
-			if ( target != P.$root.children()[ 0 ] ) {
+            // Make sure the target isn’t the root holder so it can bubble up.
+            if ( target != P.$root.children()[ 0 ] ) {
 
-				event.stopPropagation()
+                event.stopPropagation()
 
-				// * For mousedown events, cancel the default action in order to
-				//   prevent cases where focus is shifted onto external elements
-				//   when using things like jQuery mobile or MagnificPopup (ref: #249 & #120).
-				//   Also, for Firefox, don’t prevent action on the `option` element.
-				if ( event.type == 'mousedown' && angular.element( target )[0].tagName !== 'input' && target.nodeName != 'OPTION' ) {
+                // Do not attach live events, if the target clicked is [data-nav]
+                //if (!angular.element( target )[0].dataset.nav) {
+                    attachLiveEvents();
+                //}
 
-					event.preventDefault()
+                // * For mousedown events, cancel the default action in order to
+                //   prevent cases where focus is shifted onto external elements
+                //   when using things like jQuery mobile or MagnificPopup (ref: #249 & #120).
+                //   Also, for Firefox, don’t prevent action on the `option` element.
+                if ( event.type == 'mousedown' && angular.element( target )[0].tagName !== 'SELECT' && angular.element( target )[0].tagName !== 'input' && target.nodeName != 'OPTION' ) {
 
-					// Re-focus onto the element so that users can click away
-					// from elements focused within the picker.
-					ELEMENT.focus()
-				}
-			}
-		});
+                    event.preventDefault()
 
+                    // Re-focus onto the element so that users can click away
+                    // from elements focused within the picker.
+                    ELEMENT.focus()
+                }
+            }
+        });
+        
         function attachLiveEvents() {
             // If there’s a click on an actionable element, carry out the actions.
-            angular.element(P.$root[0].querySelectorAll('[data-pick], [data-nav], [data-clear], [data-close]')).on('click', function() {
+            angular.element(P.$root[0].querySelectorAll('[data-pick], [data-nav], [data-clear], [data-close]')).off('click').on('click', function() {
                 var $target = angular.element( this ),
                     targetDisabled = $target.hasClass( CLASSES.navDisabled ) || $target.hasClass( CLASSES.disabled ),
 
-                // * For IE, non-focusable elements can be active elements as well
-                //   (http://stackoverflow.com/a/2684561).
+                    // * For IE, non-focusable elements can be active elements as well
+                    //   (http://stackoverflow.com/a/2684561).
                     activeElement = document.activeElement
-                activeElement = activeElement && ( activeElement.type || activeElement.href ) && activeElement
+                    activeElement = activeElement && ( activeElement.type || activeElement.href ) && activeElement
 
                 // If it’s disabled or nothing inside is actively focused, re-focus the element.
                 if ( targetDisabled || activeElement && !P.$root[0].contains(activeElement) ) {
@@ -667,18 +696,17 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
                     P.clear().close( true )
                     attachLiveEvents();
                 }
-
                 // If a "close" button is pressed, close with focus.
-                else if ( $target.attr('data-close') ) {
-                    P.close( true );
-                    attachLiveEvents();
-                }
-
+-               else if ( $target.attr('data-close') ) {
+-                   P.close( true );
+-                   attachLiveEvents();
+-               }
+                
             });
         }
-		
-		attachLiveEvents();
-		
+        
+        attachLiveEvents();
+        
         aria( P.$root[0], 'hidden', true )
     }
 
@@ -918,12 +946,12 @@ PickerConstructor.extend = function( name, Component ) {
         // Otherwise go through each matched element and if the component
         // doesn’t exist, create a new picker using `this` element
         // and merging the defaults and options with a deep copy.
-		for (var i = 0; i < this.length; i++) {
-			var element = angular.element(this[i]);
-		    if ( !element.data( name ) ) {
+        for (var i = 0; i < this.length; i++) {
+            var element = angular.element(this[i]);
+            if ( !element.data( name ) ) {
                 new PickerConstructor( element[0], name, Component, options )
             }
-		}
+        }
     }
 
     // Set the defaults.
@@ -944,17 +972,17 @@ function aria(element, attribute, value) {
 }
 function ariaSet(element, attribute, value) {
     angular.element(element).attr(
-        (attribute == 'role' ? '' : 'aria-') + attribute,
+        (attribute == 'role' ? '' : 'aria-') + attribute,
         value
     )
 }
 function ariaAttr(attribute, data) {
     if ( !angular.isObject(attribute) ) {
-        attribute = { attribute: data }
+        attribute = { attribute: data }
     }
     data = ''
     for ( var key in attribute ) {
-        var attr = (key == 'role' ? '' : 'aria-') + key,
+        var attr = (key == 'role' ? '' : 'aria-') + key,
             attrVal = attribute[key]
         data += attrVal == null ? '' : attr + '="' + attribute[key] + '"'
     }

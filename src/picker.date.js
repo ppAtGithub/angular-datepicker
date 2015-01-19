@@ -290,7 +290,7 @@ DatePicker.prototype.overlapRanges = function( one, two ) {
     one = calendar.createRange( one.from, one.to )
     two = calendar.createRange( two.from, two.to )
 
-    return calendar.withinRange( one, two.from ) || calendar.withinRange( one, two.to ) ||
+    return calendar.withinRange( one, two.from ) || calendar.withinRange( one, two.to ) ||
         calendar.withinRange( two, one.from ) || calendar.withinRange( two, one.to )
 }
 
@@ -324,15 +324,15 @@ DatePicker.prototype.navigate = function( type, value, options ) {
 
     if ( isTargetArray || isTargetObject ) {
 
-        if ( isTargetObject ) {
-            targetYear = value.year
-            targetMonth = value.month
-            targetDate = value.date
-        }
-        else {
+        if ( isTargetArray ) {
             targetYear = +value[0]
             targetMonth = +value[1]
             targetDate = +value[2]
+        }
+        else {
+            targetYear = value.year
+            targetMonth = value.month
+            targetDate = value.date
         }
 
         // If we’re navigating months but the view is in a different
@@ -579,7 +579,7 @@ DatePicker.prototype.parse = function( type, value, options ) {
     }
 
     // Calculate the month index to adjust with.
-    monthIndex = typeof value == 'string' && !options.fromValue ? 1 : 0
+    monthIndex = typeof value == 'string' && !options.fromValue ? 1 : 0
 
     // Convert the format into an array and then map through it.
     calendar.formats.toArray( options.format ).map( function( label ) {
@@ -939,7 +939,7 @@ DatePicker.prototype.activate = function( type, datesToEnable ) {
  * Create a string for the nodes in the picker.
  */
 DatePicker.prototype.nodes = function( isOpen ) {
-	
+    
     var
         calendar = this,
         settings = calendar.settings,
@@ -1197,7 +1197,7 @@ DatePicker.prototype.nodes = function( isOpen ) {
     _.node(
         'div',
         _.node( 'button', settings.today, settings.klass.buttonToday, 'type=button data-pick=' + nowObject.pick + ( isOpen ? '' : ' disabled' ) ) +
-        _.node( 'button', settings.clear, settings.klass.buttonClear, 'type=button data-clear=1' + ( isOpen ? '' : ' disabled' ) ) +
+        _.node( 'button', settings.clear, settings.klass.buttonClear, 'type=button data-clear=1' + ( isOpen ? '' : ' disabled' ) ),
         _.node( 'button', settings.close, settings.klass.buttonClose, 'type=button data-close=true ' + ( isOpen ? '' : ' disabled' ) ),
         settings.klass.footer
     ) //endreturn
@@ -1258,7 +1258,8 @@ DatePicker.defaults = (function( prefix ) {
 
             buttonClear: prefix + 'button--clear',
             buttonClose: prefix + 'button--close',
-            buttonToday: prefix + 'button--today'
+            buttonToday: prefix + 'button--today',
+            backdrop: prefix + 'backdrop'
         }
     }
 })( Picker.klasses().picker + '__' )
